@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_HOME" value="/log"/>
+    <conversionRule conversionWord="ipandhostname" converterClass="com.yonghui.logback.IpConvert"/>
+
+    <springProperty scope="context" name="projectName" source="spring.project.name"/>
+    <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <springProperty scope="context" name="appDev" source="spring.profiles.active"/>
+    <springProperty scope="context" name="kafkaTopic" source="logback.kafka.topic"/>
+    <springProperty scope="context" name="kafkaServers" source="logback.kafka.servers"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss SSS}|${appDev}|${projectName}|${appName}|%-5level|%ipandhostname|[%thread]| %logger{50}| %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="rollingAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--<file>app.log</file>-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>app-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder><!-- 必须指定，否则不会往文件输出内容 -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss SSS}|${appDev}|${projectName}|${appName}|%-5level|%ipandhostname|[%thread]| %logger{50}| %msg%n
+            </pattern>
+        </encoder>
+        <append>false</append>
+        <prudent>false</prudent>
+    </appender>
+
+
+    <appender name="kafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+        <encoder class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder">
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <!-- 时间|环境 |项目名称 |应用名称|错误级别|ip|hostname|[%thread]| %logger{50}| %msg%n -->
+                <pattern>%d{yyyy-MM-dd HH:mm:ss SSS}|${appDev}|${projectName}|${appName}|%-5level|%ipandhostname|[%thread]| %logger{50}| %msg%n
+                </pattern>
+            </layout>
+        </encoder>
+        <topic>${kafkaTopic}</topic>
+        <keyingStrategy class="com.github.danielwegener.logback.kafka.keying.RoundRobinKeyingStrategy"/>
+        <deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"/>
+        <producerConfig>bootstrap.servers=${kafkaServers}</producerConfig>
+        <producerConfig>max.block.ms=100</producerConfig>
+        <appender-ref ref="STDOUT"/>
+    </appender>
+
+    <springProfile name="DEV">
+        <root level="info">
+            <appender-ref ref="STDOUT"/>
+            <!--<appender-ref ref="rollingAppender"/>-->
+            <!--<appender-ref ref="kafkaAppender"/>-->
+        </root>
+    </springProfile>
+
+    <springProfile name="UAT">
+        <root level="info">
+            <!--<appender-ref ref="STDOUT"/>-->
+            <!--<appender-ref ref="rollingAppender"/>-->
+            <appender-ref ref="kafkaAppender"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="PRO">
+        <root level="info">
+            <appender-ref ref="kafkaAppender"/>
+        </root>
+    </springProfile>
+
+</configuration>
+
