@@ -19,12 +19,12 @@ public class RibbonBalanceController {
     @Value("${server.port}")
     private String port;
 
-    @RequestMapping("/ribbonProducer")
+    @GetMapping("/ribbonProducer")
     public String getMessage(){
         return hostMessage + ":" + port;
     }
 
-    @RequestMapping("/getribbon")
+    @GetMapping("/getribbon")
     public String getProducer(){
         return restTemplate.getForObject("http://seckill/ribbonProducer",String.class);
     }

@@ -39,8 +39,9 @@ spring:
         prefix: config # 设置对应的文件夹名称
     loadbalancer:
       ribbon:
-        enabled: true
+        enabled: false
 
+# 配置 springboot 监控（actutor）信息
 management:
   endpoints:
     web:
@@ -59,7 +60,7 @@ management:
 seckill:
   ribbon:
     NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule  #配置负载均衡策略
-    ReadTimeout: 1 #配置请求超时时间,单位毫秒
+    ReadTimeout: 3000 #配置请求超时时间,单位毫秒
     OkToRetryOnAllOperations: true #对所有操作请求都进行重试
     MaxAutoRetriesNextServer: 2 #切换实例的重试次数
     MaxAutoRetries: 1 #对当前实例的重试次数
@@ -71,8 +72,8 @@ feign:
     config:
       seckill: # 要配置的 feign 客户端的名称
         loggerLevel: HEADERS #NONE(不打印日志),BASIC(生产配置打印基础日志),HEADERS(打印带请求头的日志),FULL(打印全量日志);
-        connectTimeout: #连接超时时间
-        readTimeout: #请求超时时间
+        connectTimeout: 1000 #连接超时时间
+        readTimeout: 3000 #请求超时时间
   compression: # feign请求压缩
     request:
       enabled: true # 对 feign 请求进行压缩
@@ -80,8 +81,36 @@ feign:
       mime-types: text/xml,application/xml,application/json # 配置压缩支持的 MIME 类型
     response:
       enabled: true # 对 feign 返回进行压缩
+  hystrix:
+    enabled: true
 
-# 配置 Hystrix
+
+# Hystrix 全局配置参照 HystrixPropertiesManager 属性类
 hystrix:
   command:
-    default:
+#    default:
+#      circuitBreaker:
+#        enabled: true
+#      execution:
+#        timeout:
+#          enabled: true
+#        isolation:
+#          thread:
+#            timeoutInMilliseconds: 3000
+    # Hystrix 针对服务进行配置
+    CloudFeignHystrixClient#getFeign():
+      circuitBreaker:
+        requestVolumeThreshold: 5 #bucker桶最小线程数
+        sleepWindowInMilliseconds: 5 #断路时间
+        errorThresholdPercentage: 50 #失败率超过多少触发断路
+        enabled: true
+      execution:
+        timeout:
+          enabled: true
+        isolation:
+          thread:
+            timeoutInMilliseconds: 3000
+
+logging:
+  level:
+    com.zyy.seckill.client: debug
